@@ -2,7 +2,7 @@
 name = "smart-lessons"
 version = "0.1.0"
 description = ""
-authors = ["pozdniakova olga <caramelca07@mail.ru>"]
+authors = ["gerasimov nikita <geraasim07@mail.ru>"]
 readme = "README.md"
 packages = [{include = "smart_lessons"}]
 
