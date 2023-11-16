@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'drf_yasg',
+    'django_celery_beat',
 
     'rest_framework',
     'django_filters',
@@ -86,7 +87,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_NAME'),
         'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD')
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': 'db'
     }
 }
 
@@ -164,3 +166,31 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=120),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
+
+
+# URL-адрес брокера сообщений
+CELERY_BROKER_URL = 'redis://redis:6379/0'  # Redis на порту 6379
+
+# URL-адрес брокера результатов, также Redis
+CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+
+# Часовой пояс для работы Celery
+CELERY_TIMEZONE = "UTC"
+
+
+# Расписание периодических задач Celery
+CELERY_BEAT_SCHEDULE = {
+    'deactivate-users': {
+        'task': 'users.tasks.check_last_login',
+        'schedule': timedelta(minutes=1),
+    },
+}
+# Email data
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS') == '1'
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL') == '1'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD')
+EMAIL_RECEPIENT_LIST = [os.getenv('EMAIL_RECEPIENT_LIST')]

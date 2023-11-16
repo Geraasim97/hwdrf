@@ -23,6 +23,7 @@ class Lesson(models.Model):
     preview = models.ImageField(upload_to='lessons/', null=True, blank=True, verbose_name='изображение')
     link = models.URLField(verbose_name='ссылка на видео-урок')
     created_by = models.ForeignKey('users.User', on_delete=models.CASCADE, null=True, blank=True, verbose_name='автор')
+    last_update = models.DateTimeField(verbose_name='последнее обновление', null=True, blank=True)
     def __str__(self):
         return f'Урок {self.title} из курса:{self.course}'
 
