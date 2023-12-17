@@ -1,27 +1,22 @@
 from django.urls import path
 
 from main.apps import MainConfig
-from main.views import LessonCreateAPIView, LessonListAPIView, LessonRetrieveAPIView, LessonUpdateAPIView, \
-    LessonDestroyAPIView, PaymentListAPIView, SubscriptionCreateAPIView, SubscriptionDestroyAPIView, \
-    PaymentCreateAPIView, PaymentRetrieveAPIView, PaymentSuccessAPIView
-from main.views import CourseViewSet
+from main.views import PlaceViewSet, RewardViewSet, HabitListAPIView, HabitCreateAPIView, HabitRetrieveAPIView, \
+    HabitUpdateAPIView, HabitDestroyAPIView, PublicHabitListAPIView
 from rest_framework.routers import DefaultRouter
 
 app_name = MainConfig.name
 
 router = DefaultRouter()
-router.register(r'courses', CourseViewSet, basename='courses')
+router.register(r'place', PlaceViewSet, basename='place')
+router.register(r'reward', RewardViewSet, basename='reward')
+
 
 urlpatterns = [
-    path('lesson/', LessonListAPIView.as_view(), name='lesson_list'),
-    path('lesson/create/', LessonCreateAPIView.as_view(), name='lesson_create'),
-    path('lesson/<int:pk>/', LessonRetrieveAPIView.as_view(), name='lesson_get'),
-    path('lesson/update/<int:pk>/', LessonUpdateAPIView.as_view(), name='lesson_update'),
-    path('lesson/delete/<int:pk>/', LessonDestroyAPIView.as_view(), name='lesson_delete'),
-    path('payment/', PaymentListAPIView.as_view(), name='payment_list'),
-    path('payment/create/', PaymentCreateAPIView.as_view(), name='payment_create'),
-    path('payment/<int:pk>/', PaymentRetrieveAPIView.as_view(), name='payment_get'),
-    path('payment/success/', PaymentSuccessAPIView.as_view(), name='payment_success'),
-    path('subscription/create/', SubscriptionCreateAPIView.as_view(), name='subscription_create'),
-    path('subscription/delete/<int:pk>/', SubscriptionDestroyAPIView.as_view(), name='subscription_delete'),
+    path('habit/', HabitListAPIView.as_view(), name='habit_list'),
+    path('public_habit/', PublicHabitListAPIView.as_view(), name='public_habit_list'),
+    path('habit/create/', HabitCreateAPIView.as_view(), name='habit_create'),
+    path('habit/<int:pk>/', HabitRetrieveAPIView.as_view(), name='habit_get'),
+    path('habit/update/<int:pk>/', HabitUpdateAPIView.as_view(), name='habit_update'),
+    path('habit/delete/<int:pk>/', HabitDestroyAPIView.as_view(), name='habit_delete'),
 ] + router.urls

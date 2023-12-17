@@ -1,25 +1,28 @@
 [tool.poetry]
-name = "smart-lessons"
+name = "habit-tracker-cw7"
 version = "0.1.0"
 description = ""
-authors = ["gerasimov nikita <geraasim07@mail.ru>"]
+authors = ["gerasimov nikita geraasim97@mail.ru"]
 readme = "README.md"
-packages = [{include = "smart_lessons"}]
+packages = [{include = "docer_cw"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
 poetry = "^1.6.1"
-django = "^4.2.5"
-pillow = "^10.0.0"
-psycopg2-binary = "^2.9.7"
-djangorestframework = "^3.14.0"
+django = "^4.2.6"
+psycopg2-binary = "^2.9.9"
 python-dotenv = "^1.0.0"
+djangorestframework = "^3.14.0"
 djangorestframework-simplejwt = "^5.3.0"
-drf-yasg = "^1.21.7"
-stripe = "^6.6.0"
+django-filter = "^23.3"
 celery = "^5.3.4"
 redis = "^5.0.1"
 django-celery-beat = "^2.5.0"
+requests = "^2.31.0"
+drf-yasg = "^1.21.7"
+django-cors-headers = "^4.3.0"
+coverage = "^7.3.2"
+flake8 = "^6.1.0"
 
 
 [build-system]

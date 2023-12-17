@@ -4,7 +4,7 @@ services:
   redis:
     image: redis
     networks:
-      - smart_lessons_network
+      - habit_network
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 1m30s
@@ -14,7 +14,7 @@ services:
   db:
     image: postgres
     networks:
-      - smart_lessons_network
+      - habit_network
     env_file:
       - .env_docker
     volumes:
@@ -31,7 +31,7 @@ services:
     build: .
     command: sh -c 'python manage.py migrate && python manage.py runserver 0.0.0.0:8000'
     networks:
-      - smart_lessons_network
+      - habit_network
     ports:
       - '8001:8000'
     depends_on:
@@ -41,7 +41,7 @@ services:
   celery:
     build: .
     networks:
-      - smart_lessons_network
+      - habit_network
     tty: true
     command: celery -A config worker -l INFO
     depends_on:
@@ -53,7 +53,7 @@ services:
   celery_beat:
     build: .
     networks:
-      - smart_lessons_network
+      - habit_network
     tty: true
     command: celery -A config beat -l INFO -S django
     depends_on:
@@ -63,5 +63,5 @@ services:
         condition: service_started
 
 networks:
-  smart_lessons_network:
+  habit_network:
     driver: bridge

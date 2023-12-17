@@ -8,7 +8,7 @@ class Command(BaseCommand):
     """Создание superuser"""
     def handle(self, *args, **options):
         user = User.objects.create(
-            email='admin@smart_lessons.ru',
+            email='admin@habit_tracker.ru',
             first_name='Admin',
             last_name='Admin',
             is_staff=True,

@@ -1,191 +1,106 @@
-
 import json
 
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from main.models import Lesson, Course, Subscription
+from main.models import Place, Reward, Habit
 from users.models import User
-from rest_framework_simplejwt.tokens import RefreshToken
 
 
-class LessonTestCase(APITestCase):
+class MainTestCase(APITestCase):
     maxDiff = None
+    email = 'user@test.ru'
+    password = 'test_asdfg'
+    chat_id = '123456789'
+    email_2 = 'user2@test.ru'
+    password_2 = 'test_gfdsa'
+    chat_id_2 = '987654321'
 
     def setUp(self) -> None:
 
         self.user = User.objects.create(
-            email='user@test.ru',
-            password='test_asdfg',
-            phone='007',
-            city='LA')
+            email=self.email,
+            password=self.password,
+            chat_id=self.chat_id)
+        self.user.set_password(self.password)
+        self.user.save()
 
-        self.moderator = User.objects.create(
-            email='moderator@test.ru',
-            password='moderator_asdfg',
-            phone='008',
-            city='NY',
-            is_moderator=True)
-
-        self.course = Course.objects.create(
-            title='test_course',
-            description='test_course',
-            created_by=self.user
-        )
-        self.lesson = Lesson.objects.create(
-            title='test_lesson',
-            course=self.course,
-            description='test_lesson',
-            link='https://www.youtube.com/watch?v=34Rp6KVGIEM',
-            created_by=self.user
-        )
-        self.lesson_2 = Lesson.objects.create(
-            title='test_lesson_2',
-            course=self.course,
-            description='test_lesson_2',
-            link='https://www.youtube.com/watch?v=34Rp6KVGIEM',
-            created_by=None
-        )
-
-        self.subscription = Subscription.objects.create(
-            user=self.user,
-            course=self.course
-        )
-
-    def test_getting_lesson_list(self):
-        """Тестирование вывода списка уроков для пользователя"""
-        tkn = 'Bearer ' + str(RefreshToken.for_user(self.user).access_token)  # авторизация
-        response = self.client.get(reverse('main:lesson_list'), {}, HTTP_AUTHORIZATION=tkn)
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_200_OK
-        )
-
-        self.assertEqual(
-            json.loads(response.content)['results'],
-            [
-                {
-                    'id': self.lesson.id,
-                    'title': self.lesson.title,
-                    'description': self.lesson.description,
-                    'preview':  self.lesson.preview,
-                    'link': self.lesson.link,
-                    'course': self.lesson.course_id,
-                    'created_by': self.lesson.created_by_id
-                }
-            ]
-        )
-
-    def test_getting_lesson_list_by_moderator(self):
-        """Тестирование вывода списка уроков для модератора"""
-        tkn = 'Bearer ' + str(RefreshToken.for_user(self.moderator).access_token)  # авторизация
-        response = self.client.get(reverse('main:lesson_list'), {}, HTTP_AUTHORIZATION=tkn)
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_200_OK
-        )
-
-        self.assertEqual(
-            json.loads(response.content)['results'],
-            [
-                {
-                    'id': self.lesson.id,
-                    'title': self.lesson.title,
-                    'description': self.lesson.description,
-                    'preview':  self.lesson.preview,
-                    'link': self.lesson.link,
-                    'course': self.lesson.course_id,
-                    'created_by': self.lesson.created_by_id
-                },
-                {
-                    'id': self.lesson_2.id,
-                    'title': self.lesson_2.title,
-                    'description': self.lesson_2.description,
-                    'preview': self.lesson_2.preview,
-                    'link': self.lesson_2.link,
-                    'course': self.lesson_2.course_id,
-                    'created_by': self.lesson_2.created_by_id
-                }
-            ]
-        )
-
-    def test_getting_lesson_list_by_not_authenticated_user(self):
-        """Тестирование вывода списка уроков для неавторизованного пользователя"""
-        response = self.client.get(reverse('main:lesson_list'))
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_401_UNAUTHORIZED
-        )
-
-    def test_getting_lesson(self):
-        """Тестирование вывода урока для пользователя"""
-        tkn = 'Bearer ' + str(RefreshToken.for_user(self.user).access_token)  # авторизация
-        response = self.client.get(reverse('main:lesson_get', args=(self.lesson.pk,)), HTTP_AUTHORIZATION=tkn)
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_200_OK
-        )
-
-        self.assertEqual(
-            json.loads(response.content),
+        response = self.client.post(
+            '/users/token/',
             {
-                'id': self.lesson.id,
-                'title': self.lesson.title,
-                'description': self.lesson.description,
-                'preview': self.lesson.preview,
-                'link': self.lesson.link,
-                'course': self.lesson.course_id,
-                'created_by': self.lesson.created_by_id
+                'email': self.email,
+                'password': self.password
             }
         )
+        self.token = response.json().get('access')
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
-    def test_getting_lesson_by_moderator(self):
-        """Тестирование вывода урока для модератора"""
-        tkn = 'Bearer ' + str(RefreshToken.for_user(self.moderator).access_token)  # авторизация
-        response = self.client.get(reverse('main:lesson_get', args=(self.lesson.pk,)), HTTP_AUTHORIZATION=tkn)
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_200_OK
+        self.place = Place.objects.create(
+            title='test_place',
+            created_by=self.user
         )
 
-        self.assertEqual(
-            json.loads(response.content),
-            {
-                'id': self.lesson.id,
-                'title': self.lesson.title,
-                'description': self.lesson.description,
-                'preview': self.lesson.preview,
-                'link': self.lesson.link,
-                'course': self.lesson.course_id,
-                'created_by': self.lesson.created_by_id
-            }
+        self.reward = Reward.objects.create(
+            title='test_reward',
+            created_by=self.user
         )
 
-    def test_getting_lesson_by_not_authenticated_user(self):
-        """Тестирование вывода урока для модератора"""
-        response = self.client.get(reverse('main:lesson_get', args=(self.lesson.pk,)))
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_401_UNAUTHORIZED
+        self.habit = Habit.objects.create(
+            place=self.place,
+            time="22:00:00",
+            action="делать массаж шеи",
+            period=1,
+            duration=120,
+            is_pleasing_habit=False,
+            reward_with_action=self.reward,
+            created_by=self.user
         )
 
-    def test_create_lesson(self):
-        """Тестирование создания уроков: пользователь"""
-        tkn = 'Bearer ' + str(RefreshToken.for_user(self.user).access_token)  # авторизация
+        self.pleasing_habit = Habit.objects.create(
+            place=self.place,
+            time="23:00:00",
+            action="ложиться спать",
+            period=1,
+            duration=60,
+            is_pleasing_habit=True,
+            created_by=self.user
+        )
+
+        self.user_2 = User.objects.create(
+            email=self.email_2,
+            password=self.password_2,
+            chat_id=self.chat_id_2)
+
+        self.place_2 = Place.objects.create(
+            title='test_place_2',
+            created_by=self.user_2
+        )
+
+        self.reward_2 = Reward.objects.create(
+            title='test_reward_2',
+            created_by=self.user_2
+        )
+
+        self.habit_2 = Habit.objects.create(
+            place=self.place_2,
+            time="21:00:00",
+            action="дыхательная гимнастика",
+            period=1,
+            duration=120,
+            is_pleasing_habit=False,
+            reward_with_action=self.reward_2,
+            created_by=self.user_2,
+            is_public=True
+        )
+
+    #  тесты модели Place
+    def test_create_place(self):
+        """Тестирование создания места"""
         data = {
-            'title': 'test_lesson_creation',
-            'course': self.course.pk,
-            'description': 'test_lesson_creation',
-            'link': 'https://www.youtube.com/watch?v=34Rp6KVGIEM',
+            'title': 'place',
         }
 
-        response = self.client.post(reverse('main:lesson_create'), data, HTTP_AUTHORIZATION=tkn)
+        response = self.client.post(reverse('main:place-list'), data)
 
         self.assertEqual(
             response.status_code,
@@ -194,120 +109,102 @@ class LessonTestCase(APITestCase):
 
         self.assertEqual(
             3,
-            Lesson.objects.all().count()
-        )
-
-    def test_create_lesson_by_moderator(self):
-        """Тестирование создания уроков: модератор"""
-        tkn = 'Bearer ' + str(RefreshToken.for_user(self.moderator).access_token)  # авторизация
-        data = {
-            'title': 'test_lesson_creation',
-            'course': self.course.pk,
-            'description': 'test_lesson_creation',
-            'link': 'https://www.youtube.com/watch?v=34Rp6KVGIEM',
-        }
-
-        response = self.client.post(reverse('main:lesson_create'), data, HTTP_AUTHORIZATION=tkn)
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_403_FORBIDDEN
+            Place.objects.all().count()
         )
 
         self.assertEqual(
-            2,
-            Lesson.objects.all().count()
+            self.user,
+            Place.objects.all().last().created_by
         )
 
-    def test_create_lesson_by_not_authenticated_user(self):
-        """Тестирование создания уроков: неавторизованный пользователь"""
-        data = {
-            'title': 'test_lesson_creation',
-            'course': self.course.pk,
-            'description': 'test_lesson_creation',
-            'link': 'https://www.youtube.com/watch?v=34Rp6KVGIEM',
-        }
+    def test_getting_place_list(self):
+        """Тестирование вывода списка мест для пользователя"""
 
-        response = self.client.post(reverse('main:lesson_create'), data)
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_401_UNAUTHORIZED
-        )
-
-        self.assertEqual(
-            2,
-            Lesson.objects.all().count()
-        )
-
-    def test_update_lesson(self):
-        """Тестирование изменения урока: пользователь"""
-        tkn = 'Bearer ' + str(RefreshToken.for_user(self.user).access_token)  # авторизация
-        data = {
-            'title': 'test_lesson_update',
-            'course': self.course.pk,
-            'description': 'test_lesson_update',
-            'link': 'https://www.youtube.com/watch?v=34Rp6KVGIEM',
-        }
-
-        response = self.client.put(reverse('main:lesson_update', args=[self.lesson.pk]), data, HTTP_AUTHORIZATION=tkn)
+        response = self.client.get(reverse('main:place-list'))
 
         self.assertEqual(
             response.status_code,
             status.HTTP_200_OK
         )
 
-        self.lesson.refresh_from_db()
-
         self.assertEqual(
-            self.lesson.title,
-            data['title']
+            response.json(),
+            [
+                {
+                    'id': self.place.id,
+                    'title': self.place.title,
+                    'created_by': self.place.created_by_id
+                }
+            ]
         )
 
-    def test_update_lesson_by_moderator(self):
-        """Тестирование изменения урока: модератор"""
-        tkn = 'Bearer ' + str(RefreshToken.for_user(self.moderator).access_token)  # авторизация
-        data = {
-            'title': 'test_lesson_update',
-            'course': self.course.pk,
-            'description': 'test_lesson_update',
-            'link': 'https://www.youtube.com/watch?v=34Rp6KVGIEM',
-        }
+    def test_getting_place_by_owner(self):
+        """Тестирование вывода места для пользователя: автор"""
 
-        response = self.client.put(reverse('main:lesson_update', args=[self.lesson.pk]), data, HTTP_AUTHORIZATION=tkn)
+        response = self.client.get(reverse('main:place-detail', args=(self.place.pk,)))
 
         self.assertEqual(
             response.status_code,
             status.HTTP_200_OK
         )
 
-        self.lesson.refresh_from_db()
-
         self.assertEqual(
-            self.lesson.title,
-            data['title']
+            response.json(),
+            {
+                'id': self.place.id,
+                'title': self.place.title,
+                'created_by': self.place.created_by_id
+            }
         )
 
-    def test_update_lesson_by_not_authenticated_user(self):
-        """Тестирование изменения урока: неавторизованный пользователь"""
-        data = {
-            'title': 'test_lesson_update',
-            'course': self.course.pk,
-            'description': 'test_lesson_update',
-            'link': 'https://www.youtube.com/watch?v=34Rp6KVGIEM',
-        }
+    def test_getting_place_by_no_owner(self):
+        """Тестирование вывода места для пользователя: не автор"""
 
-        response = self.client.put(reverse('main:lesson_update', args=[self.lesson.pk]), data)
+        response = self.client.get(reverse('main:place-detail', args=(self.place_2.pk,)))
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_401_UNAUTHORIZED
+            status.HTTP_404_NOT_FOUND
         )
 
-    def test_delete_lesson(self):
-        """Тестирование удаления урока: пользователь"""
-        tkn = 'Bearer ' + str(RefreshToken.for_user(self.user).access_token)  # авторизация
-        response = self.client.delete(reverse('main:lesson_delete', args=[self.lesson.pk]), HTTP_AUTHORIZATION=tkn)
+    def test_update_place_by_owner(self):
+        """Тестирование изменения места: автор"""
+        data = {
+            'title': 'place_updated',
+            'created_by': self.user.pk
+        }
+
+        response = self.client.put(reverse('main:place-detail', args=[self.place.pk]), data)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.place.refresh_from_db()
+
+        self.assertEqual(
+            self.place.title,
+            data['title']
+        )
+
+    def test_update_place_by_no_owner(self):
+        """Тестирование изменения места: не автор"""
+        data = {
+            'title': 'place_updated',
+            'created_by': self.user.pk
+        }
+
+        response = self.client.put(reverse('main:place-detail', args=[self.place_2.pk]), data)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND
+        )
+
+    def test_delete_place_by_owner(self):
+        """Тестирование удаления места: автор"""
+        response = self.client.delete(reverse('main:place-detail', args=[self.place.pk]))
 
         self.assertEqual(
             response.status_code,
@@ -316,47 +213,29 @@ class LessonTestCase(APITestCase):
 
         self.assertEqual(
             1,
-            Lesson.objects.all().count()
-        )
+            Place.objects.all().count())
 
-    def test_delete_lesson_by_moderator(self):
-        """Тестирование удаления урока: модератор"""
-        tkn = 'Bearer ' + str(RefreshToken.for_user(self.moderator).access_token)  # авторизация
-        response = self.client.delete(reverse('main:lesson_delete', args=[self.lesson.pk]), HTTP_AUTHORIZATION=tkn)
+    def test_delete_place_by_no_owner(self):
+        """Тестирование удаления места: не автор"""
+        response = self.client.delete(reverse('main:place-detail', args=[self.place_2.pk]))
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_403_FORBIDDEN
+            status.HTTP_404_NOT_FOUND
         )
 
         self.assertEqual(
             2,
-            Lesson.objects.all().count()
-        )
+            Place.objects.all().count())
 
-    def test_delete_lesson_by_not_authenticated_user(self):
-        """Тестирование удаления урока: неавторизованный пользователь"""
-        response = self.client.delete(reverse('main:lesson_delete', args=[self.lesson.pk]))
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_401_UNAUTHORIZED
-        )
-
-        self.assertEqual(
-            2,
-            Lesson.objects.all().count()
-        )
-
-    def test_create_subscription(self):
-        """Тестирование создания подписки на курс"""
-        tkn = 'Bearer ' + str(RefreshToken.for_user(self.user).access_token)  # авторизация
+    #  тесты модели Reward
+    def test_create_reward(self):
+        """Тестирование создания вознаграждения"""
         data = {
-            'user': self.user.pk,
-            'course': self.course.pk,
+            'title': 'reward',
         }
 
-        response = self.client.post(reverse('main:subscription_create'), data, HTTP_AUTHORIZATION=tkn)
+        response = self.client.post(reverse('main:reward-list'), data)
 
         self.assertEqual(
             response.status_code,
@@ -364,14 +243,103 @@ class LessonTestCase(APITestCase):
         )
 
         self.assertEqual(
-            2,
-            Subscription.objects.all().count()
+            3,
+            Reward.objects.all().count()
         )
 
-    def test_delete_subscription(self):
-        """Тестирование удаления подписки на курс"""
-        tkn = 'Bearer ' + str(RefreshToken.for_user(self.user).access_token)  # авторизация
-        response = self.client.delete(reverse('main:subscription_delete', args=[self.subscription.pk]), HTTP_AUTHORIZATION=tkn)
+        self.assertEqual(
+            self.user,
+            Reward.objects.all().last().created_by
+        )
+
+    def test_getting_reward_list(self):
+        """Тестирование вывода списка вознаграждений для пользователя"""
+
+        response = self.client.get(reverse('main:reward-list'))
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.assertEqual(
+            response.json(),
+            [
+                {
+                    'id': self.reward.id,
+                    'title': self.reward.title,
+                    'created_by': self.reward.created_by_id
+                }
+            ]
+        )
+
+    def test_getting_reward_by_owner(self):
+        """Тестирование вывода вознаграждения для пользователя: автор"""
+
+        response = self.client.get(reverse('main:reward-detail', args=(self.reward.pk,)))
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.assertEqual(
+            response.json(),
+            {
+                'id': self.reward.id,
+                'title': self.reward.title,
+                'created_by': self.reward.created_by_id
+            }
+        )
+
+    def test_getting_reward_by_no_owner(self):
+        """Тестирование вывода вознаграждения для пользователя: не автор"""
+
+        response = self.client.get(reverse('main:reward-detail', args=(self.reward_2.pk,)))
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND
+        )
+
+    def test_update_reward_by_owner(self):
+        """Тестирование изменения вознаграждения: автор"""
+        data = {
+            'title': 'reward_updated',
+            'created_by': self.user.pk
+        }
+
+        response = self.client.put(reverse('main:reward-detail', args=[self.reward.pk]), data)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.reward.refresh_from_db()
+
+        self.assertEqual(
+            self.reward.title,
+            data['title']
+        )
+
+    def test_update_reward_by_no_owner(self):
+        """Тестирование изменения вознаграждения: не автор"""
+        data = {
+            'title': 'reward_updated',
+            'created_by': self.user.pk
+        }
+
+        response = self.client.put(reverse('main:reward-detail', args=[self.reward_2.pk]), data)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND
+        )
+
+    def test_delete_reward_by_owner(self):
+        """Тестирование удаления вознаграждения: автор"""
+        response = self.client.delete(reverse('main:reward-detail', args=[self.reward.pk]))
 
         self.assertEqual(
             response.status_code,
@@ -379,21 +347,347 @@ class LessonTestCase(APITestCase):
         )
 
         self.assertEqual(
-            0,
-            Subscription.objects.all().count()
+            1,
+            Reward.objects.all().count())
+
+    def test_delete_reward_by_no_owner(self):
+        """Тестирование удаления вознаграждения: не автор"""
+        response = self.client.delete(reverse('main:reward-detail', args=[self.reward_2.pk]))
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND
         )
 
-    def test_subscription_field(self):
-        """Тестирование вывода признака подписки на обновления курса при просмотре курса"""
-        tkn = 'Bearer ' + str(RefreshToken.for_user(self.user).access_token)  # авторизация
-        response = self.client.get(reverse('main:courses-detail', args=(self.course.pk,)), HTTP_AUTHORIZATION=tkn)
+        self.assertEqual(
+            2,
+            Reward.objects.all().count())
+
+    #  тесты модели Habit
+    def test_create_habit(self):
+        """Тестирование создания привычки"""
+        data = {
+            "place": self.place.pk,
+            "time": "07:00:00",
+            "action": "выпивать стакан воды",
+            "period": 1,
+            "duration": 60,
+            "is_pleasing_habit": False,
+            "reward_with_action": self.reward.pk
+        }
+
+        response = self.client.post(reverse('main:habit_create'), data)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED
+        )
+
+        self.assertEqual(
+            4,
+            Habit.objects.all().count()
+        )
+
+        self.assertEqual(
+            self.user,
+            Habit.objects.all().last().created_by
+        )
+
+    def test_create_habit_incorrect_period(self):
+        """Тестирование создания привычки"""
+        data = {
+            "place": self.place.pk,
+            "time": "07:00:00",
+            "action": "выпивать стакан воды",
+            "period": 8,
+            "duration": 60,
+            "is_pleasing_habit": False,
+            "reward_with_action": self.reward.pk
+        }
+
+        response = self.client.post(reverse('main:habit_create'), data)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
+
+    def test_create_habit_incorrect_duration(self):
+        """Тестирование создания привычки"""
+        data = {
+            "place": self.place.pk,
+            "time": "07:00:00",
+            "action": "выпивать стакан воды",
+            "period": 1,
+            "duration": 121,
+            "is_pleasing_habit": False,
+            "reward_with_action": self.reward.pk
+        }
+
+        response = self.client.post(reverse('main:habit_create'), data)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
+
+    def test_create_habit_both_reward(self):
+        """Тестирование создания привычки"""
+        data = {
+            "place": self.place.pk,
+            "time": "07:00:00",
+            "action": "выпивать стакан воды",
+            "period": 1,
+            "duration": 120,
+            "is_pleasing_habit": False,
+            "reward_with_action": self.reward.pk,
+            "reward_with_pleasing_habit": self.pleasing_habit.pk
+        }
+
+        response = self.client.post(reverse('main:habit_create'), data)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
+
+    def test_create_habit_no_reward(self):
+        """Тестирование создания привычки"""
+        data = {
+            "place": self.place.pk,
+            "time": "07:00:00",
+            "action": "выпивать стакан воды",
+            "period": 1,
+            "duration": 120,
+            "is_pleasing_habit": False
+        }
+
+        response = self.client.post(reverse('main:habit_create'), data)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
+
+    def test_create_habit_reward_for_pleasing_habit(self):
+        """Тестирование создания привычки"""
+        data = {
+            "place": self.place.pk,
+            "time": "07:00:00",
+            "action": "выпивать стакан воды",
+            "period": 1,
+            "duration": 120,
+            "is_pleasing_habit": True,
+            "reward_with_action": self.reward.pk
+        }
+
+        response = self.client.post(reverse('main:habit_create'), data)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
+
+    def test_getting_habit_list(self):
+        """Тестирование вывода списка привычек пользователя"""
+
+        response = self.client.get(reverse('main:habit_list'), {})
 
         self.assertEqual(
             response.status_code,
             status.HTTP_200_OK
         )
-        self.MaxDiff = None
+
         self.assertEqual(
-            json.loads(response.content)['is_subscribed'],
-            True
+            json.loads(response.content)['results'],
+            [
+                {
+                    'id': self.habit.id,
+                    'place': self.habit.place_id,
+                    'time': self.habit.time,
+                    'action':  self.habit.action,
+                    'period': self.habit.period,
+                    'duration': self.habit.duration,
+                    'is_public': self.habit.is_public,
+                    'is_pleasing_habit': self.habit.is_pleasing_habit,
+                    'created_by': self.habit.created_by_id,
+                    'last_reminder': self.habit.last_reminder,
+                    'reward_with_action': self.habit.reward_with_action_id,
+                    'reward_with_pleasing_habit': self.habit.reward_with_pleasing_habit_id
+
+                },
+                {
+                    'id': self.pleasing_habit.id,
+                    'place': self.pleasing_habit.place_id,
+                    'time': self.pleasing_habit.time,
+                    'action':  self.pleasing_habit.action,
+                    'period': self.pleasing_habit.period,
+                    'duration': self.pleasing_habit.duration,
+                    'is_public': self.pleasing_habit.is_public,
+                    'is_pleasing_habit': self.pleasing_habit.is_pleasing_habit,
+                    'created_by': self.pleasing_habit.created_by_id,
+                    'last_reminder': self.pleasing_habit.last_reminder,
+                    'reward_with_action': self.pleasing_habit.reward_with_action_id,
+                    'reward_with_pleasing_habit': self.pleasing_habit.reward_with_pleasing_habit_id
+                }
+            ]
+        )
+
+    def test_getting_public_habit_list(self):
+        """Тестирование вывода списка публичных привычек"""
+
+        response = self.client.get(reverse('main:public_habit_list'), {})
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.assertEqual(
+            response.json(),
+            [
+                {
+                    'id': self.habit_2.id,
+                    'place': self.habit_2.place_id,
+                    'time': self.habit_2.time,
+                    'action':  self.habit_2.action,
+                    'period': self.habit_2.period,
+                    'duration': self.habit_2.duration,
+                    'is_public': self.habit_2.is_public,
+                    'is_pleasing_habit': self.habit_2.is_pleasing_habit,
+                    'created_by': self.habit_2.created_by_id,
+                    'last_reminder': self.habit_2.last_reminder,
+                    'reward_with_action': self.habit_2.reward_with_action_id,
+                    'reward_with_pleasing_habit': self.habit_2.reward_with_pleasing_habit_id
+
+                }
+            ]
+        )
+
+    def test_getting_habit_by_owner(self):
+        """Тестирование вывода привычки: автор"""
+
+        response = self.client.get(reverse('main:habit_get', args=(self.habit.pk,)))
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.assertEqual(
+            json.loads(response.content),
+            {
+                'id': self.habit.id,
+                'place': self.habit.place_id,
+                'time': self.habit.time,
+                'action': self.habit.action,
+                'period': self.habit.period,
+                'duration': self.habit.duration,
+                'is_public': self.habit.is_public,
+                'is_pleasing_habit': self.habit.is_pleasing_habit,
+                'created_by': self.habit.created_by_id,
+                'last_reminder': self.habit.last_reminder,
+                'reward_with_action': self.habit.reward_with_action_id,
+                'reward_with_pleasing_habit': self.habit.reward_with_pleasing_habit_id
+
+            }
+        )
+
+    def test_getting_habit_by_no_owner_is_public(self):
+        """Тестирование вывода привычки: не автор"""
+
+        response = self.client.get(reverse('main:habit_get', args=(self.habit_2.pk,)))
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.assertEqual(
+            json.loads(response.content),
+            {
+                'id': self.habit_2.id,
+                'place': self.habit_2.place_id,
+                'time': self.habit_2.time,
+                'action': self.habit_2.action,
+                'period': self.habit_2.period,
+                'duration': self.habit_2.duration,
+                'is_public': self.habit_2.is_public,
+                'is_pleasing_habit': self.habit_2.is_pleasing_habit,
+                'created_by': self.habit_2.created_by_id,
+                'last_reminder': self.habit_2.last_reminder,
+                'reward_with_action': self.habit_2.reward_with_action_id,
+                'reward_with_pleasing_habit': self.habit_2.reward_with_pleasing_habit_id
+            }
+        )
+
+    def test_update_habit_by_owner(self):
+        """Тестирование изменения привычки: автор"""
+        data = {
+            "place": self.habit.place_id,
+            "time": self.habit.time,
+            "action": "updated_action",
+            "period": self.habit.period,
+            "duration": self.habit.duration,
+            "reward_with_action": self.habit.reward_with_action_id
+        }
+
+        response = self.client.put(reverse('main:habit_update', args=[self.habit.pk]), data)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.habit.refresh_from_db()
+
+        self.assertEqual(
+            self.habit.action,
+            data['action']
+        )
+
+    def test_update_habit_by_no_owner(self):
+        """Тестирование изменения привычки: не автор"""
+        data = {
+            "place": self.habit_2.place_id,
+            "time": self.habit_2.time,
+            "action": "updated_action",
+            "period": self.habit_2.period,
+            "duration": self.habit_2.duration,
+            "reward_with_action": self.habit_2.reward_with_action_id
+        }
+
+        response = self.client.put(reverse('main:habit_update', args=[self.habit_2.pk]), data)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN
+        )
+
+    def test_delete_habit_by_owner(self):
+        """Тестирование удаления привычки: автор"""
+        response = self.client.delete(reverse('main:habit_delete', args=[self.habit.pk]))
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT
+        )
+
+        self.assertEqual(
+            2,
+            Habit.objects.all().count()
+        )
+
+    def test_delete_habit_by_no_owner(self):
+        """Тестирование удаления привычки: не автор"""
+        response = self.client.delete(reverse('main:habit_delete', args=[self.habit_2.pk]))
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN
+        )
+
+        self.assertEqual(
+            3,
+            Habit.objects.all().count()
         )
